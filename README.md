@@ -69,7 +69,7 @@
 - [**Theme Switcher**](https://github.com/Rayfess/wez-conf/blob/master/colors/theme.lua)
 
   - Follow the OS dark/light appearance and switch live when it changes
-  - Runtime fuzzy picker (<kbd>SUPER</kbd>+<kbd>g</kbd>), the manual choice persists across restarts
+  - Runtime fuzzy picker (<kbd>SUPER</kbd>+<kbd>g</kbd>): Custom / Dark / Light, the pick persists across restarts
   - Pin the `colors/custom.lua` palette via the `mode` variable
   - Dark/Light scheme assignments are plain variables with comment/uncomment alternatives
 
@@ -101,31 +101,20 @@
 The theme switcher lives in [`colors/theme.lua`](./colors/theme.lua). It is configured from the config file and can also be switched at runtime with the fuzzy picker (<kbd>SUPER</kbd>+<kbd>g</kbd>).
 
 ```lua
--- Theme mode:
---   'system' — follow the OS appearance (Dark/Light) and switch live when it changes
---   'custom' — always use the `colors.custom.lua` palette, ignoring the OS appearance
-local mode = 'system'
-
--- Themes listed in the runtime picker (SUPER+g):
-local themes = {
-   'Custom',
-   'Midnight In Mojave',
-   'Modus-Operandi',
-}
-
 -- Built-in scheme used when the OS is in Dark mode:
-local scheme_dark = 'Midnight In Mojave'
+local scheme_dark = 'midnight-in-mojave'
 -- Built-in scheme used when the OS is in Light mode:
 local scheme_light = 'Modus-Operandi'
 
 -- Alternatives — swap by commenting/uncommenting:
 -- local scheme_dark = 'Modus-Vivendi'
--- local scheme_light = 'Midnight In Mojave'
+-- local scheme_light = 'midnight-in-mojave'
 ```
 
-- `mode = 'system'` — resolved via [`wezterm.gui.get_appearance()`](https://wezterm.org/config/lua/wezterm.gui/get_appearance.html): OS dark ⇨ `scheme_dark`, OS light ⇨ `scheme_light`. WezTerm re-evaluates the config when the OS appearance changes, so the theme follows live.
-- `mode = 'custom'` — uses the palette defined in [`colors/custom.lua`](./colors/custom.lua), registered as a named scheme; custom scheme names take precedence over built-ins (see [docs](https://wezterm.org/config/appearance.html#defining-a-color-scheme-in-your-weztermlua)).
-- **Runtime picker** — <kbd>SUPER</kbd>+<kbd>g</kbd> opens a fuzzy list of `themes` plus a `Follow System` entry. A manual pick takes precedence over `mode` and **persists across restarts** (state file `.theme-state`); picking `Follow System` clears it and resumes the `mode` behavior.
+- **Default (nothing picked yet)** — resolved via [`wezterm.gui.get_appearance()`](https://wezterm.org/config/lua/wezterm.gui/get_appearance.html): OS dark ⇨ `scheme_dark`, OS light ⇨ `scheme_light`. WezTerm re-evaluates the config when the OS appearance changes, so the theme follows live.
+- **Custom** — uses the palette defined in [`colors/custom.lua`](./colors/custom.lua), registered as a named scheme; custom scheme names take precedence over built-ins (see [docs](https://wezterm.org/config/appearance.html#defining-a-color-scheme-in-your-weztermlua)).
+- **Dark** / **Light** — pin `scheme_dark` / `scheme_light`, ignoring the OS appearance.
+- **Runtime picker** — <kbd>SUPER</kbd>+<kbd>g</kbd> opens a fuzzy list with three entries: `Custom`, `Dark`, `Light`. A pick **persists across restarts** (state file `.theme-state`). To reset back to OS-following, delete `.theme-state`.
 
 ---
 
