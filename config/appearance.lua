@@ -1,6 +1,9 @@
 local gpu_adapters = require('utils.gpu-adapter')
 local backdrops = require('utils.backdrops')
 local theme = require('colors.theme')
+local profiles = require('colors.profiles')
+
+local profile = profiles.get_profile(theme.color_scheme)
 
 ---@type Config
 return {
@@ -38,8 +41,8 @@ return {
    switch_to_last_active_tab_when_closing_tab = true,
 
    -- command palette
-   command_palette_fg_color = '#b4befe',
-   command_palette_bg_color = '#11111b',
+   command_palette_fg_color = profile.command_palette.fg,
+   command_palette_bg_color = profile.command_palette.bg,
    command_palette_font_size = 12,
    command_palette_rows = 25,
 
@@ -53,7 +56,7 @@ return {
    adjust_window_size_when_changing_font_size = false,
    window_close_confirmation = 'NeverPrompt',
    window_frame = {
-      active_titlebar_bg = '#090909',
+      active_titlebar_bg = profile.window_frame.active_titlebar_bg,
       -- font = fonts.font,
       -- font_size = fonts.font_size,
    },

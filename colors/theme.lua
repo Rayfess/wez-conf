@@ -1,81 +1,70 @@
 local wezterm = require('wezterm')
 local custom = require('colors.custom')
-
----@alias Theme.Mode 'system' | 'custom'
-
--- Theme mode:
---   'system' — follow the OS appearance (Dark/Light) and switch live when it changes
---   'custom' — always use the `colors.custom.lua` palette, ignoring the OS appearance
----@type Theme.Mode
-local mode = 'system'
-
--- Themes listed in the runtime picker (<SUPER>+g).
--- A name must either be `Custom` or a built-in WezTerm color scheme.
----@type string[]
-local themes = {
-   'Custom',
-   'Midnight In Mojave',
-   'Modus-Operandi',
-}
+local profiles = require('colors.profiles')
+local backdrops = require('utils.backdrops')
 
 -- Built-in scheme used when the OS is in Dark mode:
-local scheme_dark = 'Midnight In Mojave'
+local scheme_dark = 'midnight-in-mojave'
 -- Built-in scheme used when the OS is in Light mode:
 local scheme_light = 'Modus-Operandi'
 
 -- Alternatives — swap by commenting/uncommenting:
 -- local scheme_dark = 'Modus-Vivendi'
--- local scheme_light = 'Midnight In Mojave'
+-- local scheme_light = 'midnight-in-mojave'
 
--- Persisted theme choice. Takes precedence over `mode` until it is cleared by
--- picking `Follow System` in the runtime picker.
+---Theme kinds selectable in the runtime picker:
+---  'custom' — always use the `colors.custom.lua` palette
+---  'dark'   — always use `scheme_dark`, ignoring the OS appearance
+---  'light'  — always use `scheme_light`, ignoring the OS appearance
+---An empty/missing persisted state means following the OS appearance.
+---@alias Theme.Kind 'custom' | 'dark' | 'light'
+
 local STATE_FILE = wezterm.config_dir .. '/.theme-state'
 
----Read the persisted theme choice
----@return string|nil
+---@type Theme.Kind[]
+local KINDS = { 'custom', 'dark', 'light' }
+
+---Read the persisted theme kind
+---@return Theme.Kind|nil
 local function load_state()
    local file = io.open(STATE_FILE, 'r')
    if not file then
       return nil
    end
 
-   local scheme = file:read('*l')
+   local kind = file:read('*l')
    file:close()
 
-   if not scheme or scheme == '' then
+   if not kind or kind == '' then
       return nil
    end
-   return scheme
+   return kind
 end
 
----Persist the theme choice, `nil` clears it
----@param scheme string|nil
-local function save_state(scheme)
+---Persist the theme kind, `nil` clears it (back to following the OS)
+---@param kind Theme.Kind|nil
+local function save_state(kind)
    local file = io.open(STATE_FILE, 'w')
    if not file then
       wezterm.log_error('Theme: unable to write state file: ' .. STATE_FILE)
       return
    end
 
-   file:write(scheme or '')
+   file:write(kind or '')
    file:close()
 end
 
----Check if a scheme name is `Custom` or a built-in WezTerm color scheme
----@param scheme string
+---Check if a theme kind is selectable
+---@param kind string
 ---@return boolean
-local function is_known_scheme(scheme)
-   if scheme == 'Custom' then
-      return true
-   end
-
-   return wezterm.get_builtin_color_schemes()[scheme] ~= nil
+local function is_known_kind(kind)
+   return kind == 'custom' or kind == 'dark' or kind == 'light'
 end
 
----@type string|nil currently selected theme, `nil` follows `mode`
+---@type Theme.Kind|nil currently selected kind, `nil` = follow the OS
 local selected = load_state()
-if selected and not is_known_scheme(selected) then
-   wezterm.log_warn('Theme: unknown persisted scheme "' .. selected .. '", ignoring it')
+if selected and not is_known_kind(selected) then
+   wezterm.log_warn('Theme: unknown persisted kind "' .. selected .. '", ignoring it')
    selected = nil
 end
 
@@ -83,14 +72,15 @@ end
 ---ref: https://wezterm.org/config/lua/wezterm.gui/get_appearance.html
 ---@return string
 local function resolve_scheme()
-   if selected then
-      return selected
-   end
-
-   if mode == 'custom' then
+   if selected == 'custom' then
       return 'Custom'
+   elseif selected == 'dark' then
+      return scheme_dark
+   elseif selected == 'light' then
+      return scheme_light
    end
 
+   -- `selected` is `nil` (nothing picked yet) — follow the OS appearance.
    -- `wezterm.gui` is not available to the mux server, so take care to do
    -- something reasonable when this config is evaluated by the mux.
    local appearance = wezterm.gui and wezterm.gui.get_appearance() or 'Dark'
@@ -100,56 +90,125 @@ local function resolve_scheme()
    return scheme_light
 end
 
+---Sync the backdrop solid layer color with the active scheme
+---@param scheme_name string
+local function sync_backdrop(scheme_name)
+   backdrops.solid_color = profiles.get_profile(scheme_name).backdrop.solid_color
+end
+
+---Build a copy of a built-in scheme extended with the profile's tab bar
+---colors (strip background + the `+` new-tab button). Defining a scheme
+---with the same name takes precedence over the built-in one.
+---ref: https://wezterm.org/config/appearance.html#defining-a-color-scheme-in-your-weztermlua
+---
+---INFO:
+---  Non-fatal: when the scheme name is missing from the registry, this logs
+---  the closest candidates and returns `nil` — the tab bar then falls back
+---  to WezTerm's default colors instead of breaking the whole config.
+---@type table<string, table> all built-in color schemes, name keyed
+local builtin_schemes = wezterm.get_builtin_color_schemes()
+
+---@param scheme_name string
+---@param profile Theme.Profile
+---@return table|nil
+local function themed_scheme(scheme_name, profile)
+   local scheme = builtin_schemes[scheme_name]
+
+   if not scheme then
+      local candidates = {}
+      local keyword = scheme_name:match('[%a]+') or scheme_name
+      for key in pairs(builtin_schemes) do
+         if key:lower():find(keyword:lower(), 1, true) then
+            table.insert(candidates, '"' .. key .. '"')
+         end
+      end
+
+      wezterm.log_error(
+         'Theme: built-in scheme "'
+            .. scheme_name
+            .. '" not found, its tab bar keeps the default colors. Candidates: '
+            .. (next(candidates) and table.concat(candidates, ', ') or 'none')
+      )
+      return nil
+   end
+
+   local themed = {}
+   for key, value in pairs(scheme) do
+      themed[key] = value
+   end
+
+   themed.tab_bar = {
+      background = profile.tab_bar.background,
+      new_tab = profile.tab_bar.new_tab,
+      new_tab_hover = profile.tab_bar.new_tab_hover,
+   }
+   return themed
+end
+
+---Build the `color_schemes` map, skipping schemes missing from the registry
+---@return table<string, table>
+local function build_color_schemes()
+   local schemes = { Custom = custom }
+
+   for _, scheme_name in ipairs({ scheme_dark, scheme_light }) do
+      local themed = themed_scheme(scheme_name, profiles.get_profile(scheme_name))
+      if themed then
+         schemes[scheme_name] = themed
+      end
+   end
+
+   return schemes
+end
+
+local active_scheme = resolve_scheme()
+sync_backdrop(active_scheme)
+
 ---Build the theme picker choices, computed when the picker opens
----@param window Window WezTerm `Window` see: https://wezterm.org/config/lua/window/index.html
 ---@return {id: string, label: string}[]
-local function choices(window)
-   local active = window:effective_config().color_scheme
+local function choices()
+   local active_kind = selected
 
    ---@type {id: string, label: string}[]
-   local res = {
-      { id = '0', label = 'Follow System' .. (selected and '' or '  (active)') },
-   }
+   local res = {}
 
-   for i, scheme in ipairs(themes) do
-      local is_active = selected == scheme or (selected == nil and scheme == active)
-      table.insert(res, { id = tostring(i), label = scheme .. (is_active and '  (active)' or '') })
+   for _, kind in ipairs(KINDS) do
+      local label = kind:sub(1, 1):upper() .. kind:sub(2)
+      table.insert(res, { id = kind, label = label .. (kind == active_kind and '  (active)' or '') })
    end
 
    return res
 end
 
----Resolve a picker id into a theme name, `nil` = Follow System
----@param id string
----@return string|nil
-local function choice_by_id(id)
-   local idx = tonumber(id)
-   if not idx or idx == 0 then
-      return nil
+---Apply and persist the chosen theme kind
+---@param window Window WezTerm `Window` see: https://wezterm.org/config/lua/window/index.html
+---@param kind Theme.Kind
+local function set_theme(window, kind)
+   if not is_known_kind(kind) then
+      return
    end
 
-   return themes[idx]
-end
+   selected = kind
+   save_state(selected)
 
----Apply and persist the chosen theme, `nil` = Follow System
----@param window Window WezTerm `Window` see: https://wezterm.org/config/lua/window/index.html
----@param scheme string|nil
-local function set_theme(window, scheme)
-   selected = scheme
-   save_state(scheme)
+   local scheme_name = resolve_scheme()
+   local profile = profiles.get_profile(scheme_name)
+   sync_backdrop(scheme_name)
 
-   -- keep other overrides (`background` from backdrops, `enable_tab_bar`, ...)
+   -- keep the other overrides and recolor every component in one pass
    local overrides = window:get_config_overrides() or {}
-   overrides.color_scheme = scheme -- `nil` removes the override, falling back to the config
+   overrides.color_scheme = scheme_name
+   overrides.background = backdrops:current_opts()
+   overrides.command_palette_fg_color = profile.command_palette.fg
+   overrides.command_palette_bg_color = profile.command_palette.bg
+   overrides.window_frame = { active_titlebar_bg = profile.window_frame.active_titlebar_bg }
    window:set_config_overrides(overrides)
 end
 
 return {
-   color_scheme = resolve_scheme(),
+   color_scheme = active_scheme,
    -- Custom scheme names defined here take precedence over built-in schemes
    -- ref: https://wezterm.org/config/appearance.html#defining-a-color-scheme-in-your-weztermlua
-   color_schemes = { Custom = custom },
+   color_schemes = build_color_schemes(),
    choices = choices,
-   choice_by_id = choice_by_id,
    set_theme = set_theme,
 }

@@ -5,6 +5,7 @@
 local wezterm = require('wezterm')
 local Cells = require('utils.cells')
 local OptsValidator = require('utils.opts-validator')
+local profiles = require('colors.profiles')
 local ustr = require('utils.str')
 
 local nf = wezterm.nerdfonts
@@ -153,34 +154,6 @@ local RV = {
    { RS.scircle_left, RS.padding, RS.icon, RS.padding, RS.title, RS.padding, RS.progress, RS.padding, RS.unseen_output, RS.padding, RS.scircle_right },
 }
 
-
----@type table<string, Cells.SegmentColors>
--- stylua: ignore
-local colors = {
-   text_default          = { bg = '#45475A', fg = '#1C1B19' },
-   text_hover            = { bg = '#7188b0', fg = '#1C1B19' },
-   text_active           = { bg = '#89b4fa', fg = '#11111B' },
-
-   unseen_output_default = { bg = '#45475A', fg = '#FFA066' },
-   unseen_output_hover   = { bg = '#7188b0', fg = '#FFA066' },
-   unseen_output_active  = { bg = '#89b4fa', fg = '#FFA066' },
-
-   scircle_default       = { bg = 'rgba(0, 0, 0, 0.4)', fg = '#45475A' },
-   scircle_hover         = { bg = 'rgba(0, 0, 0, 0.4)', fg = '#7188b0' },
-   scircle_active        = { bg = 'rgba(0, 0, 0, 0.4)', fg = '#89b4fa' },
-
-   progress_percentage_default    = { bg = '#45475A', fg = '#9df296' },
-   progress_percentage_hover      = { bg = '#7188b0', fg = '#9df296' },
-   progress_percentage_active     = { bg = '#89b4fa', fg = '#9df296' },
-
-   progress_error_default         = { bg = '#45475A', fg = '#fa3970' },
-   progress_error_hover           = { bg = '#7188b0', fg = '#fa3970' },
-   progress_error_active          = { bg = '#89b4fa', fg = '#fa3970' },
-
-   progress_indeterminate_default = { bg = '#45475A', fg = '#f5e0dc' },
-   progress_indeterminate_hover   = { bg = '#7188b0', fg = '#f5e0dc' },
-   progress_indeterminate_active  = { bg = '#89b4fa', fg = '#f5e0dc' },
-}
 
 ---
 -- ================
@@ -436,7 +409,8 @@ end
 ---@param tab TabInformation
 ---@param hover boolean
 ---@param max_width number
-function Tab:update_cells(event_opts, tab, hover, max_width)
+---@param colors table<string, Cells.SegmentColors> active profile colors, see `colors/profiles.lua`
+function Tab:update_cells(event_opts, tab, hover, max_width, colors)
    self.has_icon = false
    self.has_unseen = false
    self.has_progress = false
@@ -560,11 +534,13 @@ M.setup = function(opts)
          title = 'InputLine: Manual Tab Title'
       end
 
+      local profile = profiles.get_profile(window:effective_config().color_scheme)
+
       window:perform_action(
          wezterm.action.PromptInputLine({
             title = title,
             description = wezterm.format({
-               { Foreground = { Color = '#FFFFFF' } },
+               { Foreground = { Color = profile.command_palette.fg } },
                { Attribute = { Intensity = 'Bold' } },
                { Text = 'Enter new name for tab' },
             }),
@@ -601,13 +577,19 @@ M.setup = function(opts)
    end)
 
    -- BUILTIN EVENT
-   wezterm.on('format-tab-title', function(tab, _tabs, _panes, _config, hover, max_width)
+   wezterm.on('format-tab-title', function(tab, _tabs, _panes, config, hover, max_width)
       if not tab_list[tab.tab_id] then
          tab_list[tab.tab_id] = Tab:new()
       end
 
       -- `max_width` refers to the `tab_max_width` option set in `config/appearance.lua`
-      tab_list[tab.tab_id]:update_cells(valid_opts, tab, hover, max_width)
+      tab_list[tab.tab_id]:update_cells(
+         valid_opts,
+         tab,
+         hover,
+         max_width,
+         profiles.get_profile(config.color_scheme).tab
+      )
       return tab_list[tab.tab_id]:render()
    end)
 end

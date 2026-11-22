@@ -2,6 +2,7 @@ local wezterm = require('wezterm')
 local launch_menu = require('config.launch').launch_menu
 local domains = require('config.domains')
 local Cells = require('utils.cells')
+local profiles = require('colors.profiles')
 
 local nf = wezterm.nerdfonts
 local act = wezterm.action
@@ -9,24 +10,22 @@ local attr = Cells.attr
 
 local M = {}
 
----@type table<string, Cells.SegmentColors>
--- stylua: ignore
-local colors = {
-   label_text   = { fg = '#CDD6F4' },
-   icon_default = { fg = '#89B4FA' },
-   icon_wsl     = { fg = '#FAB387' },
-   icon_ssh     = { fg = '#F38BA8' },
-   icon_unix    = { fg = '#CBA6F7' },
-}
-
 local cells = Cells:new()
-   :add_segment('icon_default', ' ' .. nf.oct_terminal .. ' ', colors.icon_default)
-   :add_segment('icon_wsl', ' ' .. nf.cod_terminal_linux .. ' ', colors.icon_wsl)
-   :add_segment('icon_ssh', ' ' .. nf.md_ssh .. ' ', colors.icon_ssh)
-   :add_segment('icon_unix', ' ' .. nf.dev_gnu .. ' ', colors.icon_unix)
-   :add_segment('label_text', '', colors.label_text, attr(attr.intensity('Bold')))
+   :add_segment('icon_default', ' ' .. nf.oct_terminal .. ' ')
+   :add_segment('icon_wsl', ' ' .. nf.cod_terminal_linux .. ' ')
+   :add_segment('icon_ssh', ' ' .. nf.md_ssh .. ' ')
+   :add_segment('icon_unix', ' ' .. nf.dev_gnu .. ' ')
+   :add_segment('label_text', '', nil, attr(attr.intensity('Bold')))
 
-local function build_choices()
+---@param colors Theme.Profile.new_tab
+local function build_choices(colors)
+   cells
+      :update_segment_colors('icon_default', colors.icon_default)
+      :update_segment_colors('icon_wsl', colors.icon_wsl)
+      :update_segment_colors('icon_ssh', colors.icon_ssh)
+      :update_segment_colors('icon_unix', colors.icon_unix)
+      :update_segment_colors('label_text', colors.label_text)
+
    local choices = {}
    local choices_data = {}
    local idx = 1
@@ -89,8 +88,6 @@ local function build_choices()
    return choices, choices_data
 end
 
-local choices, choices_data = build_choices()
-
 M.setup = function()
    wezterm.on('new-tab-button-click', function(window, pane, button, default_action)
       if default_action and button == 'Left' then
@@ -98,6 +95,9 @@ M.setup = function()
       end
 
       if button == 'Right' then
+         local profile = profiles.get_profile(window:effective_config().color_scheme)
+         local choices, choices_data = build_choices(profile.new_tab)
+
          window:perform_action(
             act.InputSelector({
                title = 'InputSelector: Launch Menu',

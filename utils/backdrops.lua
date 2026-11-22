@@ -1,5 +1,5 @@
 local wezterm = require('wezterm')
-local colors = require('colors.custom')
+local profiles = require('colors.profiles')
 
 -- Seeding random numbers before generating for use
 -- Known issue with lua math library
@@ -16,6 +16,7 @@ local GLOB_PATTERN = '*.{jpg,jpeg,png,gif,bmp,ico,tiff,pnm,dds,tga}'
 ---@field images string[] background images
 ---@field images_dir string directory of background images. Default is `wezterm.config_dir .. '/backdrops/'`
 ---@field no_img boolean focus mode on or off
+---@field solid_color string color of the solid background layer, synced with the active theme profile
 local BackDrops = {}
 BackDrops.__index = BackDrops
 
@@ -27,6 +28,7 @@ function BackDrops:init()
       images = {},
       images_dir = wezterm.config_dir .. '/backdrops/',
       no_img = false,
+      solid_color = profiles.get_profile('Custom').backdrop.solid_color,
    }
    return setmetatable(backdrops, self)
 end
@@ -73,7 +75,7 @@ function BackDrops:_gen_opts()
    end
 
    table.insert(bg_opts, {
-      source = { Color = colors.background },
+      source = { Color = self.solid_color },
       height = '120%',
       width = '120%',
       vertical_offset = '-10%',
@@ -90,7 +92,7 @@ end
 function BackDrops:_gen_no_img_opts()
    return {
       {
-         source = { Color = colors.background },
+         source = { Color = self.solid_color },
          height = '120%',
          width = '120%',
          vertical_offset = '-10%',
@@ -108,6 +110,16 @@ function BackDrops:initial_options(opts)
 
    self.no_img = opts.no_img
    if opts.no_img then
+      return self:_gen_no_img_opts()
+   end
+
+   return self:_gen_opts()
+end
+
+---Return the current `background` options based on the focus mode state
+---@return BackgroundLayer[]
+function BackDrops:current_opts()
+   if self.no_img then
       return self:_gen_no_img_opts()
    end
 

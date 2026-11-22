@@ -2,6 +2,7 @@ local wezterm = require('wezterm')
 local umath = require('utils.math')
 local Cells = require('utils.cells')
 local OptsValidator = require('utils.opts-validator')
+local profiles = require('colors.profiles')
 
 local nf = wezterm.nerdfonts
 local attr = Cells.attr
@@ -52,22 +53,14 @@ local charging_icons = {
    nf.md_battery_charging,
 }
 
----@type table<string, Cells.SegmentColors>
--- stylua: ignore
-local colors = {
-   date      = { fg = '#fab387', bg = 'rgba(0, 0, 0, 0.4)' },
-   battery   = { fg = '#f9e2af', bg = 'rgba(0, 0, 0, 0.4)' },
-   separator = { fg = '#74c7ec', bg = 'rgba(0, 0, 0, 0.4)' }
-}
-
 local cells = Cells:new()
 
 cells
-   :add_segment('date_icon', ICON_DATE .. '  ', colors.date, attr(attr.intensity('Bold')))
-   :add_segment('date_text', '', colors.date, attr(attr.intensity('Bold')))
-   :add_segment('separator', ' ' .. ICON_SEPARATOR .. '  ', colors.separator)
-   :add_segment('battery_icon', '', colors.battery)
-   :add_segment('battery_text', '', colors.battery, attr(attr.intensity('Bold')))
+   :add_segment('date_icon', ICON_DATE .. '  ', nil, attr(attr.intensity('Bold')))
+   :add_segment('date_text', '', nil, attr(attr.intensity('Bold')))
+   :add_segment('separator', ' ' .. ICON_SEPARATOR .. '  ')
+   :add_segment('battery_icon')
+   :add_segment('battery_text', '', nil, attr(attr.intensity('Bold')))
 
 ---@return string, string
 local function battery_info()
@@ -101,9 +94,15 @@ M.setup = function(opts)
    ---@cast valid_opts Event.RightStatusOptions
 
    wezterm.on('update-status', function(window, _pane)
+      local profile = profiles.get_profile(window:effective_config().color_scheme)
       local battery_text, battery_icon = battery_info()
 
       cells
+         :update_segment_colors('date_icon', profile.right_status.date)
+         :update_segment_colors('date_text', profile.right_status.date)
+         :update_segment_colors('separator', profile.right_status.separator)
+         :update_segment_colors('battery_icon', profile.right_status.battery)
+         :update_segment_colors('battery_text', profile.right_status.battery)
          :update_segment_text('date_text', wezterm.strftime(valid_opts.date_format))
          :update_segment_text('battery_icon', battery_icon)
          :update_segment_text('battery_text', battery_text)
