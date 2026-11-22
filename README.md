@@ -16,6 +16,17 @@
 
 ---
 
+### Table of Contents
+
+- [Features](#features)
+- [Theme](#theme)
+- [Getting Started](#getting-started)
+- [All Key Bindings](#all-key-bindings)
+- [References/Inspirations](#referencesinspirations)
+- [License](#license)
+
+---
+
 ### Features
 
 - [**Background Image Selector**](https://github.com/Rayfess/wez-conf/blob/master/utils/backdrops.lua)
@@ -54,6 +65,58 @@
       - Mac: `Metal`
 
       </details>
+
+- [**Theme Switcher**](https://github.com/Rayfess/wez-conf/blob/master/colors/theme.lua)
+
+  - Follow the OS dark/light appearance and switch live when it changes
+  - Pin the `colors/custom.lua` palette via the `mode` variable
+  - Dark/Light scheme assignments are plain variables with comment/uncomment alternatives
+
+  > See: [Theme](#theme) for configuration
+
+- [**Pill Tab Titles**](https://github.com/Rayfess/wez-conf/blob/master/events/tab-title.lua)
+
+  - Pill-shaped tab titles with process prefix icons (WSL, elevated shells, debug overlay, launcher, input selectors)
+  - Per-pane progress indicator via `OSC 9;4` — percentage frames + indeterminate spinner, stale progress is suppressed after 30s
+    - Requires WezTerm `Nightly` `20250209-182623-44866cc1` or newer; gracefully disabled on older versions
+  - Unseen-output counters (`numbered_box`, `numbered_circle` or plain `circle`)
+  - Manual rename, locked until reset
+
+  > See: [key bindings](#tabs-title) for usage
+
+- [**Status Bars**](https://github.com/Rayfess/wez-conf/blob/master/events/left-status.lua)
+
+  - Left: pill indicator showing the active key table name or the leader key glyph
+  - Right ([`events/right-status.lua`](https://github.com/Rayfess/wez-conf/blob/master/events/right-status.lua)): live date + battery with a 10-step charging/discharging icon ladder
+
+- [**New-Tab Button Launcher**](https://github.com/Rayfess/wez-conf/blob/master/events/new-tab-button.lua)
+
+  - Right-click the `+` button to fuzzy-launch shells, WSL and SSH domains in a new tab
+
+---
+
+### Theme
+
+The theme switcher lives in [`colors/theme.lua`](./colors/theme.lua) and is driven entirely by the config file — there are no key bindings; edits apply on config reload (automatic).
+
+```lua
+-- Theme mode:
+--   'system' — follow the OS appearance (Dark/Light) and switch live when it changes
+--   'custom' — always use the `colors.custom.lua` palette, ignoring the OS appearance
+local mode = 'system'
+
+-- Built-in scheme used when the OS is in Dark mode:
+local scheme_dark = 'Midnight In Mojave'
+-- Built-in scheme used when the OS is in Light mode:
+local scheme_light = 'Modus-Operandi'
+
+-- Alternatives — swap by commenting/uncommenting:
+-- local scheme_dark = 'Modus-Vivendi'
+-- local scheme_light = 'Midnight In Mojave'
+```
+
+- `mode = 'system'` — resolved via [`wezterm.gui.get_appearance()`](https://wezterm.org/config/lua/wezterm.gui/get_appearance.html): OS dark ⇨ `scheme_dark`, OS light ⇨ `scheme_light`. WezTerm re-evaluates the config when the OS appearance changes, so the theme follows live.
+- `mode = 'custom'` — uses the palette defined in [`colors/custom.lua`](./colors/custom.lua), registered as a named scheme; custom scheme names take precedence over built-ins (see [docs](https://wezterm.org/config/appearance.html#defining-a-color-scheme-in-your-weztermlua)).
 
 ---
 
@@ -199,9 +262,10 @@
       # On Windows and Unix systems
       git clone https://github.com/Rayfess/wez-conf.git ~/.config/wezterm
       ```
-  2.  Update `launch` and `domain` related option:
+  2.  Update `launch`, `domain` and `theme` related options:
       - [./config/launch.lua](./config/launch.lua) for preferred shells and its paths
       - [./config/domains.lua](./config/domains.lua) for custom SSH/WSL domains
+      - [./colors/theme.lua](./colors/theme.lua) for the theme mode and dark/light scheme assignments
   3.  And Done!!! 🎉🎉
 
 &nbsp;
@@ -396,3 +460,10 @@ Most of the key bindings revolve around a <kbd>SUPER</kbd> and <kbd>SUPER_REV</k
 - <https://github.com/catppuccin/wezterm>
 - <https://github.com/wez/wezterm/discussions/628#discussioncomment-1874614>
 - <https://github.com/wez/wezterm/discussions/628#discussioncomment-5942139>
+
+---
+
+### License
+
+Distributed under the [MIT License](./LICENSE).<br>
+© 2026 Rayfess · portions © 2023 Kevin Silvester (original upstream config).
