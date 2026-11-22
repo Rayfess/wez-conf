@@ -1,6 +1,7 @@
 local wezterm = require('wezterm')
 local platform = require('utils.platform')
 local backdrops = require('utils.backdrops')
+local theme = require('colors.theme')
 local act = wezterm.action
 
 local mod = {}
@@ -170,6 +171,29 @@ local keys = {
       action = wezterm.action_callback(function(window, _pane)
          backdrops:toggle_focus(window)
       end)
+   },
+
+   -- theme controls --
+   {
+      key = 'g',
+      mods = mod.SUPER,
+      action = wezterm.action_callback(function(window, pane)
+         window:perform_action(
+            act.InputSelector({
+               title = 'InputSelector: Theme',
+               choices = theme.choices(window),
+               fuzzy = true,
+               fuzzy_description = wezterm.nerdfonts.md_palette .. ' Select Theme: ',
+               action = wezterm.action_callback(function(sel_window, _sel_pane, id)
+                  if not id then
+                     return
+                  end
+                  theme.set_theme(sel_window, theme.choice_by_id(id))
+               end),
+            }),
+            pane
+         )
+      end),
    },
 
    -- panes --
