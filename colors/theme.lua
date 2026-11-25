@@ -5,11 +5,7 @@ local profiles = require('colors.profiles')
 -- Built-in scheme used when the OS is in Dark mode:
 local scheme_dark = 'midnight-in-mojave'
 -- Built-in scheme used when the OS is in Light mode:
-local scheme_light = 'Modus-Operandi'
-
--- Alternatives — swap by commenting/uncommenting:
--- local scheme_dark = 'Modus-Vivendi'
--- local scheme_light = 'midnight-in-mojave'
+local scheme_light = 'modus-operandi'
 
 ---Theme kinds selectable in the runtime picker:
 ---  'custom' — always use the `colors.custom.lua` palette

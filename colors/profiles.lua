@@ -128,7 +128,7 @@ local profiles = {
       },
    },
 
-   ['Modus-Operandi'] = {
+   ['modus-operandi'] = {
       tab = {
          text_default          = { bg = '#a6a6a6', fg = '#000000' },
          text_hover            = { bg = '#6e6e6e', fg = '#ffffff' },
