@@ -29,14 +29,6 @@
 
 ### Features
 
-- [**Background Image Selector**](https://github.com/Rayfess/wez-conf/blob/master/utils/backdrops.lua)
-
-  - Cycle images
-  - Fuzzy search for image
-  - Toggle background image
-
-  > See: [key bindings](#background-images) for usage
-
 - [**GPU Adapter Selector**](https://github.com/Rayfess/wez-conf/blob/master/utils/gpu-adapter.lua)
 
   > :bulb: Only works if the [`front_end`](https://github.com/Rayfess/wez-conf/blob/master/config/appearance.lua#L8) option is set to `WebGpu`.
@@ -404,18 +396,6 @@ Most of the key bindings revolve around a <kbd>SUPER</kbd> and <kbd>SUPER_REV</k
 | <kbd>SUPER</kbd>+<kbd>d</kbd> | Scroll Lines down <sub>5 lines</sub> |
 | <kbd>PageUp</kbd>             | Scroll Page up                       |
 | <kbd>PageDown</kbd>           | Scroll Page down                     |
-
-&nbsp;
-
-#### Background Images
-
-| Keys                              | Action                       |
-| --------------------------------- | ---------------------------- |
-| <kbd>SUPER</kbd>+<kbd>/</kbd>     | Select Random Image          |
-| <kbd>SUPER</kbd>+<kbd>,</kbd>     | Cycle to next Image          |
-| <kbd>SUPER</kbd>+<kbd>.</kbd>     | Cycle to previous Image      |
-| <kbd>SUPER_REV</kbd>+<kbd>/</kbd> | Fuzzy select Image           |
-| <kbd>SUPER</kbd>+<kbd>b</kbd>     | Toggle background focus mode |
 
 &nbsp;
 

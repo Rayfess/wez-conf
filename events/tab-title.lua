@@ -572,7 +572,6 @@ M.setup = function(opts)
       local effective_config = window:effective_config()
       window:set_config_overrides({
          enable_tab_bar = not effective_config.enable_tab_bar,
-         background = effective_config.background,
       })
    end)
 

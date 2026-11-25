@@ -19,8 +19,7 @@
 ---@field new_tab { label_text: Profile.Colors, icon_default: Profile.Colors, icon_wsl: Profile.Colors, icon_ssh: Profile.Colors, icon_unix: Profile.Colors }
 ---@field command_palette { fg: string, bg: string }
 ---@field window_frame { active_titlebar_bg: string }
----@field backdrop { solid_color: string }
----@field tab_bar { background: string, new_tab: {bg_color: string, fg_color: string}, new_tab_hover: {bg_color: string, fg_color: string, italic: boolean} }
+---@field scheme_overrides? { bright_black?: string } optional ANSI overrides applied onto the registered scheme
 
 -- stylua: ignore
 ---@type table<string, Theme.Profile>
@@ -69,7 +68,7 @@ local profiles = {
       },
       command_palette = { fg = '#b4befe', bg = '#11111b' },
       window_frame    = { active_titlebar_bg = '#090909' },
-      backdrop        = { solid_color = '#1f1f28' },
+      scheme_overrides = { bright_black = '#9399b2' },
       tab_bar         = {
          background   = 'rgba(0, 0, 0, 0.4)',
          new_tab      = { bg_color = '#1f1f28', fg_color = '#cdd6f4' },
@@ -121,7 +120,7 @@ local profiles = {
       },
       command_palette = { fg = '#ffffff', bg = '#2c2c2e' },
       window_frame    = { active_titlebar_bg = '#1e1e1e' },
-      backdrop        = { solid_color = '#1e1e1e' },
+      scheme_overrides = { bright_black = '#98989d' },
       tab_bar         = {
          background   = 'rgba(0, 0, 0, 0.4)',
          new_tab      = { bg_color = '#3a3a3c', fg_color = '#ffffff' },
@@ -173,7 +172,7 @@ local profiles = {
       },
       command_palette = { fg = '#000000', bg = '#f2f2f2' },
       window_frame    = { active_titlebar_bg = '#ffffff' },
-      backdrop        = { solid_color = '#ffffff' },
+      scheme_overrides = nil,
       tab_bar         = {
          background   = 'rgba(255, 255, 255, 0.6)',
          new_tab      = { bg_color = '#a6a6a6', fg_color = '#000000' },
@@ -196,7 +195,6 @@ local REQUIRED_SECTIONS = {
    new_tab        = { 'label_text', 'icon_default', 'icon_wsl', 'icon_ssh', 'icon_unix' },
    command_palette = { 'fg', 'bg' },
    window_frame   = { 'active_titlebar_bg' },
-   backdrop       = { 'solid_color' },
    tab_bar        = { 'background', 'new_tab', 'new_tab_hover' },
 }
 

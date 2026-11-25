@@ -1,7 +1,6 @@
 local wezterm = require('wezterm')
 local custom = require('colors.custom')
 local profiles = require('colors.profiles')
-local backdrops = require('utils.backdrops')
 
 -- Built-in scheme used when the OS is in Dark mode:
 local scheme_dark = 'midnight-in-mojave'
@@ -90,12 +89,6 @@ local function resolve_scheme()
    return scheme_light
 end
 
----Sync the backdrop solid layer color with the active scheme
----@param scheme_name string
-local function sync_backdrop(scheme_name)
-   backdrops.solid_color = profiles.get_profile(scheme_name).backdrop.solid_color
-end
-
 ---Build a copy of a built-in scheme extended with the profile's tab bar
 ---colors (strip background + the `+` new-tab button). Defining a scheme
 ---with the same name takes precedence over the built-in one.
@@ -145,14 +138,33 @@ local function themed_scheme(scheme_name, profile)
    return themed
 end
 
+---Apply the profile's optional ANSI overrides onto the scheme table
+---@param scheme table
+---@param profile Theme.Profile
+local function apply_scheme_overrides(scheme, profile)
+   local overrides = profile.scheme_overrides
+   if overrides and overrides.bright_black then
+      -- brights[1] is "bright black" — the gray most shells use for
+      -- parameters/flags; replace it with a copy to keep sources untouched
+      local brights = {}
+      for i, color in ipairs(scheme.brights or {}) do
+         brights[i] = color
+      end
+      brights[1] = overrides.bright_black
+      scheme.brights = brights
+   end
+end
+
 ---Build the `color_schemes` map, skipping schemes missing from the registry
 ---@return table<string, table>
 local function build_color_schemes()
    local schemes = { Custom = custom }
+   apply_scheme_overrides(schemes.Custom, profiles.get_profile('Custom'))
 
    for _, scheme_name in ipairs({ scheme_dark, scheme_light }) do
       local themed = themed_scheme(scheme_name, profiles.get_profile(scheme_name))
       if themed then
+         apply_scheme_overrides(themed, profiles.get_profile(scheme_name))
          schemes[scheme_name] = themed
       end
    end
@@ -161,7 +173,6 @@ local function build_color_schemes()
 end
 
 local active_scheme = resolve_scheme()
-sync_backdrop(active_scheme)
 
 ---Build the theme picker choices, computed when the picker opens
 ---@return {id: string, label: string}[]
@@ -192,12 +203,10 @@ local function set_theme(window, kind)
 
    local scheme_name = resolve_scheme()
    local profile = profiles.get_profile(scheme_name)
-   sync_backdrop(scheme_name)
 
    -- keep the other overrides and recolor every component in one pass
    local overrides = window:get_config_overrides() or {}
    overrides.color_scheme = scheme_name
-   overrides.background = backdrops:current_opts()
    overrides.command_palette_fg_color = profile.command_palette.fg
    overrides.command_palette_bg_color = profile.command_palette.bg
    overrides.window_frame = { active_titlebar_bg = profile.window_frame.active_titlebar_bg }
